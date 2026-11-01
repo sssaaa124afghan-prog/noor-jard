@@ -55,6 +55,12 @@ input.in:focus{border-color:var(--pri)}
 .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .photo .re{position:absolute;bottom:10px;inset-inline-start:10px;background:rgba(0,0,0,.6);color:#fff;border-radius:10px;padding:6px 12px;font-size:14px}
 .sugs{display:grid;gap:6px;margin-top:8px}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 -16px 10px;padding:0 16px 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;min-height:40px;padding:0 14px;border-radius:999px;background:#fff;border:1.5px solid var(--line);font-weight:600;font-size:15px}
+.chips button[aria-pressed="true"]{background:var(--pri);color:#fff;border-color:var(--pri)}
+.sugh{font-size:13px;color:var(--ink3);margin:2px 2px 0}
+.btn.del{background:transparent;color:var(--bad);min-height:44px;font-weight:600;margin-top:14px}
 .sug{display:block;text-align:start;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
 .sug b{display:block;font-weight:600;line-height:1.45}
 .sug span{font-size:12.5px;color:var(--ink3);direction:ltr;display:block;text-align:right}
@@ -116,6 +122,7 @@ dialog .row{display:grid;gap:8px}
     <div class="stat"><b id="sFlag">0</b><span>مش في القايمة <span class="en">not matched</span></span></div>
   </div>
   <button class="btn ghost" id="histLink" style="margin:-6px 0 8px" class="hide"></button>
+  <p class="merge hide" id="unsentNote" style="margin:0 0 10px"></p>
   <div class="list" id="list"></div>
   <div class="bar">
     <button class="btn line" id="exportBtn">ابعت الملف <span class="en">Send</span></button>
@@ -135,6 +142,7 @@ dialog .row{display:grid;gap:8px}
 
   <label class="f" for="q">اسم الصنف <span class="en">Item name</span></label>
   <div id="pickBox">
+    <div class="chips" id="chips" role="group" aria-label="القسم"></div>
     <input id="q" class="in" placeholder="اكتب جزء من الاسم أو الكود" autocomplete="off" autocapitalize="off" spellcheck="false">
     <p class="hint">اختار الاسم من الاقتراحات، أو اكتب الكود <span class="en">Pick from the list</span></p>
     <div class="sugs" id="sugs"></div>
@@ -159,6 +167,7 @@ dialog .row{display:grid;gap:8px}
   <p class="hint">كراتين؟ اكتب عدد الكراتين × اللي في الكرتونة. فرط؟ اكتب العدد بس. <span class="en">Cartons × per carton, or just the number</span></p>
   <div class="lines" id="lines"></div>
   <div class="total"><div class="calc" id="calc">—</div><b id="tot">0</b><span id="totU">حبة</span></div>
+  <button class="btn del hide" id="eDel">🗑 احذف الصنف ده من الجرد <span class="en">Delete item</span></button>
 
   <div class="bar">
     <button class="btn" id="save" disabled>احفظ <span class="en" style="color:#cfdcee">Save</span></button>
@@ -248,15 +257,18 @@ const norm = t => String(t||'').toLowerCase()
   .replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي')
   .replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[()\[\]{}«»"'،,._\-\/]/g,' ').replace(/\s+/g,' ').trim();
 const tri = s => { const t=' '+s+' ', r=new Set(); for(let i=0;i<t.length-2;i++) r.add(t.slice(i,i+3)); return r; };
-function buildIndex(){ IDX = CAT.map(p=>{ const n=norm(p[1]+' '+p[2]+' '+p[4]); return {p, n, nn:norm(p[1]), tg:tri(n)}; }); }
+function buildIndex(){ IDX = CAT.map(p=>{ const n=norm(p[1]+' '+p[2]+' '+p[4]); const x={p, n, nn:norm(p[1]), tg:tri(n)}; x.cat=catOf(x); return x; }); }
+const CATS=[['caps','كابات','Caps',/(^| )كاب|غطا|غطي/],['bottles','غرشات','Bottles',/غرش|زجاج|قزاز/],['boxes','بوكسات','Boxes',/بوكس|علب|كرتون/],['oils','زيوت','Oils',/زيت|oil/],['dyes','صبغات','Dyes',/صبغ/],['collars','كولرات','Collars',/كولر|طوق/],['sprays','رشاشات','Sprayers',/رشاش|بخاخ|سبراي|pump/],['perfumes','عطور','Perfumes',/^عطر|بخور|رشوش|دفيوزر/]];
+let curCat=null;
+const catOf = x => { for(const c of CATS) if(c[3].test(x.nn)) return c[0]; return 'other'; };
 function search(q){
   const nq=norm(q); if(nq.length<2) return [];
   const toks=nq.split(' ').filter(Boolean);
   let r=[];
-  for(const x of IDX){ if(toks.every(t=>x.n.includes(t))){ let sc=0; if(x.nn.startsWith(toks[0])) sc+=3; if(norm(x.p[2])===nq) sc+=10; sc-=x.nn.length/200; r.push([sc,x.p]); } }
+  for(const x of IDX){ if(curCat && x.cat!==curCat) continue; if(toks.every(t=>x.n.includes(t))){ let sc=0; if(x.nn.startsWith(toks[0])) sc+=3; if(norm(x.p[2])===nq) sc+=10; sc-=x.nn.length/200; r.push([sc,x.p]); } }
   if(r.length<3){ // typo-tolerant fallback: shared 3-letter pieces
     const qg=tri(nq);
-    const fz=[]; for(const x of IDX){ let c=0; qg.forEach(g=>{ if(x.tg.has(g)) c++; }); const d=2*c/(qg.size+Math.min(x.tg.size,qg.size*3)); if(d>.28) fz.push([d,x.p]); }
+    const fz=[]; for(const x of IDX){ if(curCat && x.cat!==curCat) continue; let c=0; qg.forEach(g=>{ if(x.tg.has(g)) c++; }); const d=2*c/(qg.size+Math.min(x.tg.size,qg.size*3)); if(d>.28) fz.push([d,x.p]); }
     fz.sort((a,b)=>b[0]-a[0]); const seen=new Set(r.map(a=>a[1][0])); fz.slice(0,8).forEach(a=>{ if(!seen.has(a[1][0])) r.push([-1+a[0],a[1]]); });
   }
   r.sort((a,b)=>b[0]-a[0]); return r.slice(0,8).map(a=>a[1]);
@@ -285,7 +297,7 @@ const total = it => it.lines.reduce((s,[a,b])=>s+a*(b||1),0);
 async function openHome(){
   show('home');
   $('who2').textContent = `${S.who} · ${new Date(S.started||Date.now()).toLocaleDateString('en-GB')} · ${CAT.length.toLocaleString('en-US')} منتج`;
-  $('sItems').textContent = S.items.length; $('histLink').classList.toggle('hide',!(S.archive&&S.archive.length)); $('histLink').textContent=`📁 الجردات السابقة (${(S.archive||[]).length})`; $('sFlag').textContent = S.items.filter(i=>i.custom).length;
+  $('sItems').textContent = S.items.length; { const u=S.items.length&&unsent(S); $('unsentNote').classList.toggle('hide',!u); if(u) $('unsentNote').textContent = S.sentAt ? '⚠️ ضفت أصناف بعد آخر مرة بعت فيها الملف — ابعته تاني' : '⚠️ الجرد ده لسه متبعتش للمحاسب'; } $('histLink').classList.toggle('hide',!(S.archive&&S.archive.length)); $('histLink').textContent=`📁 الجردات السابقة (${(S.archive||[]).length})`; $('sFlag').textContent = S.items.filter(i=>i.custom).length;
   const L=$('list'); L.innerHTML='';
   if(!S.items.length){ L.innerHTML='<p class="empty">لسه مفيش أصناف. دوس «+ صنف» وابدأ.<br><span class="en">No items yet. Tap Add.</span></p>'; return; }
   for(const it of [...S.items].reverse()){
@@ -303,11 +315,11 @@ function openEdit(uid){
   const it = uid ? S.items.find(i=>i.uid===uid) : null;
   E = it ? JSON.parse(JSON.stringify(it)) : {uid:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), pid:null, name:'', code:'', custom:false, unit:'pcs', lines:[], t:null, isNew:true};
   E.photo=null; E.photoChanged=false;
-  $('eTitle').textContent = it ? 'تعديل صنف' : 'صنف جديد';
-  $('q').value=''; $('sugs').innerHTML=''; $('qa').value=''; $('qb').value=''; $('mergeNote').classList.add('hide');
+  $('eTitle').textContent = it ? 'تعديل صنف' : 'صنف جديد'; $('eDel').classList.toggle('hide',!it); $('eCancel').firstChild.textContent = it ? 'رجوع ' : 'خلصت ';
+  $('q').value=''; $('sugs').innerHTML=''; curCat=S.cat||null; renderChips(); $('qa').value=''; $('qb').value=''; $('mergeNote').classList.add('hide');
   setPhoto(null); if(it) getImg(it.uid).then(src=>{ if(src&&E&&E.uid===it.uid) setPhoto(src); });
   renderChosen(); renderUnit(); renderLines(); show('edit');
-  if(!it) setTimeout(()=>$('shot').focus(),50);
+  
 }
 function setPhoto(src){
   const b=$('shot'); b.innerHTML = src ? `<img src="${src}" alt="صورة الصنف"><span class="re">صوّر تاني</span>` : '<span style="font-size:34px">📷</span><span>صوّر الصنف <span class="en">Take photo</span></span>';
@@ -316,12 +328,25 @@ function setPhoto(src){
 $('shot').onclick=()=>$('cam').click();
 $('cam').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; const src=await shrink(f); if(src){ setPhoto(src); E.photoChanged=true; check(); setTimeout(()=>{ if(!E.name) $('q').focus(); },100); } };
 
+$('q').addEventListener('focus',()=>{ if(!$('q').value) renderSugs(); });
 let st; $('q').oninput=()=>{ clearTimeout(st); st=setTimeout(renderSugs,120); };
+function renderChips(){
+  const C=$('chips'); C.innerHTML='';
+  [[null,'الكل','All'],...CATS].forEach(([id,ar,en])=>{ const b=document.createElement('button'); b.setAttribute('aria-pressed',String(curCat===id)); b.innerHTML=`${ar} <span class="en">${en}</span>`;
+    b.onclick=()=>{ curCat=id; S.cat=id; save(); renderChips(); renderSugs(); $('q').focus(); }; C.appendChild(b); });
+}
+function recentPicks(){ // last distinct catalog items picked in this count and the saved ones, newest first
+  const seen=new Set(), out=[]; const all=[...S.items].sort((a,b)=>String(b.t).localeCompare(String(a.t))).concat(...(S.archive||[]).map(a=>a.items));
+  for(const it of all){ if(it.custom||it.pid==null||seen.has(it.pid)) continue; seen.add(it.pid); const x=IDX.find(z=>z.p[0]===it.pid); if(x && (!curCat||x.cat===curCat)) out.push(x.p); if(out.length>=6) break; }
+  return out;
+}
+function sugBtn(p){ const b=document.createElement('button'); b.className='sug'; const done=S.items.some(i=>i.pid===p[0]); b.innerHTML=`<b>${esc(p[1])}</b><span>${esc([p[2],p[4]].filter(Boolean).join(' · '))}${done?' · ✓ متعدّ':''}</span>`; b.onclick=()=>choose(p); return b; }
 function renderSugs(){
   const q=$('q').value, box=$('sugs'); box.innerHTML='';
-  if(norm(q).length<2) return;
+  if(norm(q).length<2){ const r=recentPicks(); if(r.length){ const h=document.createElement('p'); h.className='sugh'; h.textContent='آخر الأصناف · Recent'; box.appendChild(h); r.forEach(p=>box.appendChild(sugBtn(p))); } return; }
   const res=search(q);
-  for(const p of res){ const b=document.createElement('button'); b.className='sug'; b.innerHTML=`<b>${esc(p[1])}</b><span>${esc([p[2],p[4]].filter(Boolean).join(' · '))}</span>`; b.onclick=()=>choose(p); box.appendChild(b); }
+  if(!res.length && curCat){ const h=document.createElement('p'); h.className='sugh'; h.textContent='مفيش نتايج في القسم ده — جرّب «الكل»'; box.appendChild(h); }
+  for(const p of res) box.appendChild(sugBtn(p));
   const c=document.createElement('button'); c.className='sug custom'; c.innerHTML=`<b>مش لاقيه؟ احفظه باسم «${esc(q.trim())}»</b><span>Not in the list — save as typed</span>`; c.onclick=()=>chooseCustom(q.trim()); box.appendChild(c);
 }
 function choose(p){
@@ -357,20 +382,26 @@ function renderLines(){
   check();
 }
 function check(){ $('save').disabled = !(E && E.name && E.lines.length && E.photo); }
-$('save').onclick=async()=>{
+$('save').onclick=()=>{
   if(!E.photo){ toast('صوّر الصنف الأول'); return; }
-  if(E.photoChanged||E.isNew) await putImg(E.uid,E.photo);
+  const wasNew=E.isNew && !E.mergedFrom, uid=E.uid, photo=E.photo, needImg=E.photoChanged||E.isNew;
   const rec={uid:E.uid,pid:E.pid,name:E.name,code:E.code,custom:E.custom,unit:E.unit,lines:E.lines,t:new Date().toISOString()};
   const k=S.items.findIndex(i=>i.uid===E.uid); if(k>=0) S.items[k]=rec; else S.items.push(rec);
-  save(); toast(`اتحفظ: ${fmt(total(rec))} ${UNIT[rec.unit][0]}`); E=null; openHome();
+  save(); toast(`✓ اتحفظ: ${fmt(total(rec))} ${UNIT[rec.unit][0]}`);
+  // everything above is synchronous so the camera can still open inside this tap
+  if(wasNew){ openEdit(null); $('eTitle').textContent='الصنف اللي بعده'; $('cam').click(); }
+  else { E=null; openHome(); }
+  if(needImg) putImg(uid,photo).catch(()=>toast('مشكلة في حفظ الصورة'));
 };
+$('eDel').onclick=()=>{ const uid=E.uid, nm=E.name; ask('تحذف الصنف ده؟',`«${nm}» هيتشال من الجرد بعدده وصورته.`,[['احذف الصنف',async()=>{ S.items=S.items.filter(i=>i.uid!==uid); save(); await delImg(uid); E=null; toast('اتحذف'); openHome(); }],['رجوع',null]]); };
 $('eCancel').onclick=()=>{ if(E && (E.lines.length||E.photoChanged) ){ ask('تسيب الصنف من غير حفظ؟','',[['سيبه',()=>{E=null;openHome();}],['كمّل',null]]); } else { E=null; openHome(); } };
 
 
 /* ── previous counts: kept on the phone with their photos ── */
 function archiveCurrent(){
   S.archive=S.archive||[];
-  S.archive.unshift({id:'a'+Date.now().toString(36), who:S.who, started:S.started, ended:new Date().toISOString(), items:S.items});
+  S.archive.unshift({id:'a'+Date.now().toString(36), who:S.who, started:S.started, ended:new Date().toISOString(), items:S.items, sentAt:S.sentAt||null});
+  S.sentAt=null;
   S.items=[]; S.started=new Date().toISOString(); save();
 }
 const dt = d => new Date(d).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -378,7 +409,7 @@ function openHist(){
   show('hist'); const L=$('hList'); L.innerHTML=''; const A=S.archive||[];
   if(!A.length){ L.innerHTML='<p class="empty">مفيش جردات محفوظة لسه.<br><span class="en">No saved counts yet.</span></p>'; return; }
   for(const a of A){ const b=document.createElement('button'); b.className='it'; b.style.gridTemplateColumns='1fr auto';
-    b.innerHTML=`<span><span class="nm">جرد ${dt(a.started)}</span><span class="cd" style="direction:rtl;text-align:right">${esc(a.who)} · اتقفل ${dt(a.ended)}</span>${a.items.some(i=>i.custom)?`<span class="flag">${a.items.filter(i=>i.custom).length} مش في القايمة</span>`:''}</span><span class="q">${a.items.length}<small>صنف</small></span>`;
+    b.innerHTML=`<span><span class="nm">جرد ${dt(a.started)}</span><span class="cd" style="direction:rtl;text-align:right">${esc(a.who)} · اتقفل ${dt(a.ended)}</span>${unsent(a)?'<span class="flag">متبعتش</span> ':''}${a.items.some(i=>i.custom)?`<span class="flag">${a.items.filter(i=>i.custom).length} مش في القايمة</span>`:''}</span><span class="q">${a.items.length}<small>صنف</small></span>`;
     b.onclick=()=>openArch(a.id); L.appendChild(b); }
 }
 async function openArch(id){
@@ -396,7 +427,7 @@ $('hBack').onclick=()=>openHome(); $('aBack').onclick=()=>openHist();
 function ask(t,p,btns){ const d=$('dlg'); $('dT').textContent=t; $('dP').textContent=p; $('dP').classList.toggle('hide',!p); const B=$('dB'); B.innerHTML='';
   btns.forEach(([l,fn,keep],i)=>{ const b=document.createElement('button'); b.className='btn'+(i? ' line':''); if(/احذف|ابدأ جرد جديد/.test(l)) b.className='btn danger'; b.textContent=l; b.onclick=()=>{ if(!keep) d.close(); fn&&fn(); if(keep) b.textContent='✓ '+l.replace(/^\S+\s/,''); }; B.appendChild(b); }); if(!d.open) d.showModal(); }
 $('menu').onclick=()=>ask('خيارات','',[
-  ['احفظ الجرد وابدأ جرد جديد',()=>{ if(!S.items.length){ toast('الجرد فاضي'); return; } ask('تحفظ الجرد ده وتبدأ جديد؟','الجرد الحالي هيتحفظ في «الجردات السابقة» بصوره، وتقدر تفتحه وتبعته تاني في أي وقت.',[['احفظ وابدأ جديد',()=>{ archiveCurrent(); toast('اتحفظ في الجردات السابقة'); openHome(); }],['رجوع',null]]); }],
+  ['احفظ الجرد وابدأ جرد جديد',()=>{ if(!S.items.length){ toast('الجرد فاضي'); return; } const nc=S.items.filter(i=>i.custom).length; const warn=[unsent(S)?'⚠️ الجرد ده لسه متبعتش للمحاسب.':'', nc?`⚠️ فيه ${nc} صنف «مش في القايمة».`:''].filter(Boolean).join(' '); ask('تحفظ الجرد ده وتبدأ جديد؟',(warn?warn+' ':'')+'الجرد الحالي هيتحفظ في «الجردات السابقة» بصوره.',[...(unsent(S)?[['📤 ابعته الأول',()=>exportSession(S)]]:[]),['احفظ وابدأ جديد',()=>{ archiveCurrent(); toast('اتحفظ في الجردات السابقة'); openHome(); }],['رجوع',null]]); }],
   ['📁 الجردات السابقة',()=>openHist()],
   ['تحديث ملف المنتجات',()=>loadCatFile((cat,name)=>{ setCat(cat,name); toast(`اتحدّث: ${cat.length.toLocaleString('en-US')} منتج`); })],
   ['غيّر اسمي',()=>{ S.who=''; save(); $('who').value=''; $('catInfo').textContent='✓ '+catInfoText(); show('lock'); }],
@@ -467,15 +498,17 @@ async function buildFiles(sess){
 const DATAURL={};
 async function prepData(files){ if(location.protocol!=='file:') return; for(const f of files){ DATAURL[f.name]=await new Promise(ok=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.readAsDataURL(f); }); } }
 function saveFile(f){ const a=document.createElement('a'); const u=DATAURL[f.name]||URL.createObjectURL(f); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ if(u.startsWith('blob:')) URL.revokeObjectURL(u); a.remove(); },4000); }
+function markSent(sess){ sess.sentAt=new Date().toISOString(); save(); }
+const unsent = sess => !sess.sentAt || sess.items.some(i=>String(i.t)>sess.sentAt);
 async function exportSession(sess){
   if(!sess.items.length){ toast('مفيش أصناف لسه · No items yet'); return; }
   toast('بنجهّز الملف…');
   let files; try{ files=await buildFiles(sess); await prepData(files); }catch(e){ ask('حصلت مشكلة','ماقدرناش نجهّز الملف: '+(e&&e.message||e),[['تمام',null]]); return; }
   const canShare = !!(navigator.canShare && navigator.canShare({files}));
   const btns=[];
-  if(canShare) btns.push(['📤 ابعت للمحاسب (واتساب…)',async()=>{ try{ await navigator.share({files, title:'جرد نور الخليج'}); }catch(e){ if(e.name!=='AbortError'){ toast('المشاركة مش شغالة هنا، نزّل الملف'); } } }]);
-  btns.push(['⬇️ نزّل التقرير بالصور (HTML)',()=>{ saveFile(files[0]); toast('اتنزل: '+files[0].name); },true]);
-  btns.push(['⬇️ نزّل ملف الإكسيل بالصور (Excel)',()=>{ saveFile(files[1]); toast('اتنزل: '+files[1].name); },true]);
+  if(canShare) btns.push(['📤 ابعت للمحاسب (واتساب…)',async()=>{ try{ await navigator.share({files, title:'جرد نور الخليج'}); markSent(sess); }catch(e){ if(e.name!=='AbortError'){ toast('المشاركة مش شغالة هنا، نزّل الملف'); } } }]);
+  btns.push(['⬇️ نزّل التقرير بالصور (HTML)',()=>{ markSent(sess); saveFile(files[0]); toast('اتنزل: '+files[0].name); },true]);
+  btns.push(['⬇️ نزّل ملف الإكسيل بالصور (Excel)',()=>{ markSent(sess); saveFile(files[1]); toast('اتنزل: '+files[1].name); },true]);
   btns.push(['خلصت',null]);
   ask('ابعت الجرد', `${sess.items.length} صنف جاهزين. ابعت الملفين للمحاسب.`, btns);
 }
