@@ -115,6 +115,7 @@ dialog .row{display:grid;gap:8px}
     <div class="stat"><b id="sItems">0</b><span>صنف اتعدّ <span class="en">items</span></span></div>
     <div class="stat"><b id="sFlag">0</b><span>مش في القايمة <span class="en">not matched</span></span></div>
   </div>
+  <button class="btn ghost" id="histLink" style="margin:-6px 0 8px" class="hide"></button>
   <div class="list" id="list"></div>
   <div class="bar">
     <button class="btn line" id="exportBtn">ابعت الملف <span class="en">Send</span></button>
@@ -164,6 +165,17 @@ dialog .row{display:grid;gap:8px}
   </div>
 </section>
 
+<!-- HISTORY -->
+<section id="hist" class="screen hide">
+  <header class="top"><div><h1>الجردات السابقة</h1><p class="sub">Saved counts</p></div><button class="btn ghost" id="hBack" style="width:auto">رجوع <span class="en">Back</span></button></header>
+  <div class="list" id="hList"></div>
+</section>
+<section id="arch" class="screen hide">
+  <header class="top"><div><h1 id="aTitle">جرد</h1><p class="sub" id="aSub"></p></div><button class="btn ghost" id="aBack" style="width:auto">رجوع <span class="en">Back</span></button></header>
+  <div class="list" id="aList"></div>
+  <div class="bar"><button class="btn danger" id="aDel" style="flex:.6">حذف</button><button class="btn" id="aSend">ابعت تاني <span class="en" style="color:#cfdcee">Send</span></button></div>
+</section>
+
 <dialog id="dlg"><h2 id="dT"></h2><p id="dP"></p><div class="row" id="dB"></div></dialog>
 <div class="toast" id="toast" role="status"></div>
 
@@ -179,7 +191,7 @@ function save(){ try{ localStorage.setItem('jard_v1', JSON.stringify(S)); }catch
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),2200); }
 const fmt = n => (Math.round(n*1000)/1000).toLocaleString('en-US');
 const esc = t => String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function show(id){ ['lock','home','edit'].forEach(s=>$(s).classList.toggle('hide', s!==id)); window.scrollTo(0,0); }
+function show(id){ ['lock','home','edit','hist','arch'].forEach(s=>$(s).classList.toggle('hide', s!==id)); window.scrollTo(0,0); }
 
 /* ── photos in IndexedDB ── */
 const DB = new Promise((ok,no)=>{ const r=indexedDB.open('jard',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>ok(r.result); r.onerror=()=>no(r.error); });
@@ -273,7 +285,7 @@ const total = it => it.lines.reduce((s,[a,b])=>s+a*(b||1),0);
 async function openHome(){
   show('home');
   $('who2').textContent = `${S.who} · ${new Date(S.started||Date.now()).toLocaleDateString('en-GB')} · ${CAT.length.toLocaleString('en-US')} منتج`;
-  $('sItems').textContent = S.items.length; $('sFlag').textContent = S.items.filter(i=>i.custom).length;
+  $('sItems').textContent = S.items.length; $('histLink').classList.toggle('hide',!(S.archive&&S.archive.length)); $('histLink').textContent=`📁 الجردات السابقة (${(S.archive||[]).length})`; $('sFlag').textContent = S.items.filter(i=>i.custom).length;
   const L=$('list'); L.innerHTML='';
   if(!S.items.length){ L.innerHTML='<p class="empty">لسه مفيش أصناف. دوس «+ صنف» وابدأ.<br><span class="en">No items yet. Tap Add.</span></p>'; return; }
   for(const it of [...S.items].reverse()){
@@ -284,6 +296,7 @@ async function openHome(){
   }
 }
 $('addBtn').onclick=()=>openEdit(null);
+$('histLink').onclick=()=>openHist();
 
 /* ── editor ── */
 function openEdit(uid){
@@ -353,11 +366,38 @@ $('save').onclick=async()=>{
 };
 $('eCancel').onclick=()=>{ if(E && (E.lines.length||E.photoChanged) ){ ask('تسيب الصنف من غير حفظ؟','',[['سيبه',()=>{E=null;openHome();}],['كمّل',null]]); } else { E=null; openHome(); } };
 
+
+/* ── previous counts: kept on the phone with their photos ── */
+function archiveCurrent(){
+  S.archive=S.archive||[];
+  S.archive.unshift({id:'a'+Date.now().toString(36), who:S.who, started:S.started, ended:new Date().toISOString(), items:S.items});
+  S.items=[]; S.started=new Date().toISOString(); save();
+}
+const dt = d => new Date(d).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function openHist(){
+  show('hist'); const L=$('hList'); L.innerHTML=''; const A=S.archive||[];
+  if(!A.length){ L.innerHTML='<p class="empty">مفيش جردات محفوظة لسه.<br><span class="en">No saved counts yet.</span></p>'; return; }
+  for(const a of A){ const b=document.createElement('button'); b.className='it'; b.style.gridTemplateColumns='1fr auto';
+    b.innerHTML=`<span><span class="nm">جرد ${dt(a.started)}</span><span class="cd" style="direction:rtl;text-align:right">${esc(a.who)} · اتقفل ${dt(a.ended)}</span>${a.items.some(i=>i.custom)?`<span class="flag">${a.items.filter(i=>i.custom).length} مش في القايمة</span>`:''}</span><span class="q">${a.items.length}<small>صنف</small></span>`;
+    b.onclick=()=>openArch(a.id); L.appendChild(b); }
+}
+async function openArch(id){
+  const a=(S.archive||[]).find(x=>x.id===id); if(!a) return openHist();
+  show('arch'); $('aTitle').textContent=`جرد ${dt(a.started)}`; $('aSub').textContent=`${a.who} · ${a.items.length} صنف`;
+  const L=$('aList'); L.innerHTML='';
+  for(const it of a.items){ const r=document.createElement('div'); r.className='it';
+    r.innerHTML=`<span class="noimg"></span><span><span class="nm">${esc(it.name)}</span>${it.code?`<span class="cd">${esc(it.code)}</span>`:''}${it.custom?'<span class="flag">مش في القايمة</span>':''}</span><span class="q">${fmt(total(it))}<small>${UNIT[it.unit][0]}</small></span>`;
+    L.appendChild(r); getImg(it.uid).then(src=>{ if(src){ const im=new Image(); im.src=src; im.alt=''; r.firstChild.replaceWith(im); } }); }
+  $('aSend').onclick=()=>exportSession(a);
+  $('aDel').onclick=()=>ask('تمسح الجرد ده نهائي؟','هيتمسح من الموبايل بصوره. اتأكد إنك بعته للمحاسب الأول.',[['احذف الجرد',async()=>{ for(const i of a.items) await delImg(i.uid); S.archive=S.archive.filter(x=>x.id!==a.id); save(); toast('اتمسح'); openHist(); }],['رجوع',null]]);
+}
+$('hBack').onclick=()=>openHome(); $('aBack').onclick=()=>openHist();
 /* ── dialog ── */
 function ask(t,p,btns){ const d=$('dlg'); $('dT').textContent=t; $('dP').textContent=p; $('dP').classList.toggle('hide',!p); const B=$('dB'); B.innerHTML='';
   btns.forEach(([l,fn,keep],i)=>{ const b=document.createElement('button'); b.className='btn'+(i? ' line':''); if(/احذف|ابدأ جرد جديد/.test(l)) b.className='btn danger'; b.textContent=l; b.onclick=()=>{ if(!keep) d.close(); fn&&fn(); if(keep) b.textContent='✓ '+l.replace(/^\S+\s/,''); }; B.appendChild(b); }); if(!d.open) d.showModal(); }
 $('menu').onclick=()=>ask('خيارات','',[
-  ['ابدأ جرد جديد',()=>ask('متأكد؟','هيتمسح الجرد ده من الموبايل. ابعت الملف الأول.',[['ابدأ جرد جديد',async()=>{ for(const i of S.items) await delImg(i.uid); S.items=[]; S.started=new Date().toISOString(); save(); openHome(); }],['رجوع',null]])],
+  ['احفظ الجرد وابدأ جرد جديد',()=>{ if(!S.items.length){ toast('الجرد فاضي'); return; } ask('تحفظ الجرد ده وتبدأ جديد؟','الجرد الحالي هيتحفظ في «الجردات السابقة» بصوره، وتقدر تفتحه وتبعته تاني في أي وقت.',[['احفظ وابدأ جديد',()=>{ archiveCurrent(); toast('اتحفظ في الجردات السابقة'); openHome(); }],['رجوع',null]]); }],
+  ['📁 الجردات السابقة',()=>openHist()],
   ['تحديث ملف المنتجات',()=>loadCatFile((cat,name)=>{ setCat(cat,name); toast(`اتحدّث: ${cat.length.toLocaleString('en-US')} منتج`); })],
   ['غيّر اسمي',()=>{ S.who=''; save(); $('who').value=''; $('catInfo').textContent='✓ '+catInfoText(); show('lock'); }],
   ['رجوع',null]]);
@@ -380,7 +420,7 @@ function zip(entries){ // [{name, data:Uint8Array}]
 }
 function thumb(src,m){ return new Promise(ok=>{ if(!src) return ok(null); const im=new Image(); im.onload=()=>{ const s=Math.min(1,m/Math.max(im.width,im.height)); const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height); const d=c.toDataURL('image/jpeg',.8); ok({b:Uint8Array.from(atob(d.split(',')[1]),x=>x.charCodeAt(0)), w:c.width, h:c.height}); }; im.onerror=()=>ok(null); im.src=src; }); }
 const xe=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
-async function buildXlsx(rows){
+async function buildXlsx(rows,sess){
   const enc=new TextEncoder(), E=[], add=(n,t)=>E.push({name:n,data:typeof t==='string'?enc.encode(t):t});
   const head=['#','الصورة','كود دفترة','اسم الصنف','الكمية','الوحدة','الكمية بالجرام','الحسبة','مش في القايمة','العدّاد','الوقت','product_id'];
   const colW=[5,16,22,44,11,8,14,22,12,14,18,11];
@@ -391,7 +431,7 @@ async function buildXlsx(rows){
   let draw='', drels='', ct='';
   for(let k=0;k<rows.length;k++){ const r=rows[k], R=k+2;
     const g = r.unit==='kg'? r.total*1000 : (r.unit==='g'? r.total : '');
-    sheet+=`<row r="${R}" ht="84" customHeight="1">${cn(R,0,k+1,2)}${cs(R,1,'',2)}${cs(R,2,r.code,2)}${cs(R,3,r.name,3)}${cn(R,4,r.total,4)}${cs(R,5,UNIT[r.unit][0],2)}${cn(R,6,g,4)}${cs(R,7,r.lines.map(([a,b])=>b?`${a}×${b}`:a).join(' + '),2)}${cs(R,8,r.custom?'نعم':'',2)}${cs(R,9,S.who,2)}${cs(R,10,new Date(r.t).toLocaleString('en-GB'),2)}${cn(R,11,/^\d+$/.test(String(r.pid??''))?r.pid:'',2)}</row>`;
+    sheet+=`<row r="${R}" ht="84" customHeight="1">${cn(R,0,k+1,2)}${cs(R,1,'',2)}${cs(R,2,r.code,2)}${cs(R,3,r.name,3)}${cn(R,4,r.total,4)}${cs(R,5,UNIT[r.unit][0],2)}${cn(R,6,g,4)}${cs(R,7,r.lines.map(([a,b])=>b?`${a}×${b}`:a).join(' + '),2)}${cs(R,8,r.custom?'نعم':'',2)}${cs(R,9,sess.who,2)}${cs(R,10,new Date(r.t).toLocaleString('en-GB'),2)}${cn(R,11,/^\d+$/.test(String(r.pid??''))?r.pid:'',2)}</row>`;
     const im=await thumb(r.img,320); if(!im) continue;
     const n=k+1, H=104, W=Math.round(H*im.w/im.h), emu=v=>Math.round(v*9525);
     add(`xl/media/image${n}.jpeg`, im.b);
@@ -410,16 +450,16 @@ async function buildXlsx(rows){
   add('xl/drawings/_rels/drawing1.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${drels}</Relationships>`);
   return zip(E);
 }
-async function buildFiles(){
-  const day=new Date(S.started||Date.now()).toISOString().slice(0,10), who=S.who.replace(/[\\/:*?"<>|]/g,'');
-  const rows=[]; for(const it of S.items){ rows.push({...it, total:total(it), img:await getImg(it.uid)}); }
+async function buildFiles(sess){
+  const day=new Date(sess.started||Date.now()).toISOString().slice(0,10), who=sess.who.replace(/[\\/:*?"<>|]/g,'');
+  const rows=[]; for(const it of sess.items){ rows.push({...it, total:total(it), img:await getImg(it.uid)}); }
   const unitAr=u=>UNIT[u][0];
   const data=rows.map(r=>({pid:r.pid,code:r.code,name:r.name,custom:r.custom,unit:r.unit,qty:r.total,lines:r.lines,t:r.t}));
-  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>جرد ${esc(who)} ${day}</title><style>body{font:14px/1.5 system-ui,Tahoma,sans-serif;margin:24px;color:#16202c}h1{font-size:20px;margin:0}p{color:#4c5867;margin:4px 0 16px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dfe4ea;padding:8px;text-align:right;vertical-align:middle}th{background:#e8eef6;font-size:13px}img{width:110px;height:110px;object-fit:cover;border-radius:8px}td.q{font-weight:800;font-size:18px;white-space:nowrap}.c{direction:ltr;color:#7a8594;font-size:12px}.f{color:#b25b00;font-size:12px}.l{direction:ltr;color:#7a8594;font-size:12px}tr{page-break-inside:avoid}</style></head><body><h1>جرد نور الخليج</h1><p>العدّاد: ${esc(S.who)} · بدأ: ${new Date(S.started).toLocaleString('en-GB')} · ${rows.length} صنف</p><table><thead><tr><th>#</th><th>الصورة</th><th>الصنف</th><th>العدد</th><th>التفاصيل</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.img?`<img src="${r.img}">`:''}</td><td>${esc(r.name)}${r.code?`<div class="c">${esc(r.code)}</div>`:''}${r.custom?'<div class="f">مش في القايمة</div>':''}</td><td class="q">${fmt(r.total)} ${unitAr(r.unit)}</td><td class="l">${r.lines.map(([a,b])=>b?`${fmt(a)}×${fmt(b)}`:fmt(a)).join(' + ')}</td></tr>`).join('')}</tbody></table><script type="application/json" id="jard-data">${JSON.stringify({app:'jard',v:1,who:S.who,started:S.started,exported:new Date().toISOString(),items:data}).replace(/</g,'\\u003c')}<\/script></body></html>`;
+  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>جرد ${esc(who)} ${day}</title><style>body{font:14px/1.5 system-ui,Tahoma,sans-serif;margin:24px;color:#16202c}h1{font-size:20px;margin:0}p{color:#4c5867;margin:4px 0 16px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dfe4ea;padding:8px;text-align:right;vertical-align:middle}th{background:#e8eef6;font-size:13px}img{width:110px;height:110px;object-fit:cover;border-radius:8px}td.q{font-weight:800;font-size:18px;white-space:nowrap}.c{direction:ltr;color:#7a8594;font-size:12px}.f{color:#b25b00;font-size:12px}.l{direction:ltr;color:#7a8594;font-size:12px}tr{page-break-inside:avoid}</style></head><body><h1>جرد نور الخليج</h1><p>العدّاد: ${esc(sess.who)} · بدأ: ${new Date(sess.started).toLocaleString('en-GB')} · ${rows.length} صنف</p><table><thead><tr><th>#</th><th>الصورة</th><th>الصنف</th><th>العدد</th><th>التفاصيل</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.img?`<img src="${r.img}">`:''}</td><td>${esc(r.name)}${r.code?`<div class="c">${esc(r.code)}</div>`:''}${r.custom?'<div class="f">مش في القايمة</div>':''}</td><td class="q">${fmt(r.total)} ${unitAr(r.unit)}</td><td class="l">${r.lines.map(([a,b])=>b?`${fmt(a)}×${fmt(b)}`:fmt(a)).join(' + ')}</td></tr>`).join('')}</tbody></table><script type="application/json" id="jard-data">${JSON.stringify({app:'jard',v:1,who:sess.who,started:sess.started,exported:new Date().toISOString(),items:data}).replace(/</g,'\\u003c')}<\/script></body></html>`;
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const csv='\ufeff'+['product_id,code,name,not_in_list,unit,qty,qty_grams,lines,counter,time'].concat(rows.map(r=>[r.pid??'',q(r.code),q(r.name),r.custom?1:0,r.unit,r.total,r.unit==='kg'?r.total*1000:(r.unit==='g'?r.total:''),q(r.lines.map(([a,b])=>b?`${a}x${b}`:a).join(' + ')),q(S.who),r.t].join(','))).join('\r\n');
+  const csv='\ufeff'+['product_id,code,name,not_in_list,unit,qty,qty_grams,lines,counter,time'].concat(rows.map(r=>[r.pid??'',q(r.code),q(r.name),r.custom?1:0,r.unit,r.total,r.unit==='kg'?r.total*1000:(r.unit==='g'?r.total:''),q(r.lines.map(([a,b])=>b?`${a}x${b}`:a).join(' + ')),q(sess.who),r.t].join(','))).join('\r\n');
   const tag=(who.replace(/[^A-Za-z0-9]/g,'')||'u'+Math.abs([...who].reduce((h,c)=>h*31+c.charCodeAt(0)|0,7))%10000)+'_'+new Date().toTimeString().slice(0,5).replace(':','');
-  const xl=await buildXlsx(rows);
+  const xl=await buildXlsx(rows,sess);
   return [new File([html],`noor-stock_${day}_${tag}.html`,{type:'text/html'}), new File([xl],`noor-stock_${day}_${tag}.xlsx`,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})];
 }
 // Files are prepared first; each button then acts inside its own tap (phones and browsers block share/download after a delay)
@@ -427,18 +467,19 @@ async function buildFiles(){
 const DATAURL={};
 async function prepData(files){ if(location.protocol!=='file:') return; for(const f of files){ DATAURL[f.name]=await new Promise(ok=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.readAsDataURL(f); }); } }
 function saveFile(f){ const a=document.createElement('a'); const u=DATAURL[f.name]||URL.createObjectURL(f); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ if(u.startsWith('blob:')) URL.revokeObjectURL(u); a.remove(); },4000); }
-$('exportBtn').onclick=async()=>{
-  if(!S.items.length){ toast('مفيش أصناف لسه · No items yet'); return; }
+async function exportSession(sess){
+  if(!sess.items.length){ toast('مفيش أصناف لسه · No items yet'); return; }
   toast('بنجهّز الملف…');
-  let files; try{ files=await buildFiles(); await prepData(files); }catch(e){ ask('حصلت مشكلة','ماقدرناش نجهّز الملف: '+(e&&e.message||e),[['تمام',null]]); return; }
+  let files; try{ files=await buildFiles(sess); await prepData(files); }catch(e){ ask('حصلت مشكلة','ماقدرناش نجهّز الملف: '+(e&&e.message||e),[['تمام',null]]); return; }
   const canShare = !!(navigator.canShare && navigator.canShare({files}));
   const btns=[];
   if(canShare) btns.push(['📤 ابعت للمحاسب (واتساب…)',async()=>{ try{ await navigator.share({files, title:'جرد نور الخليج'}); }catch(e){ if(e.name!=='AbortError'){ toast('المشاركة مش شغالة هنا، نزّل الملف'); } } }]);
   btns.push(['⬇️ نزّل التقرير بالصور (HTML)',()=>{ saveFile(files[0]); toast('اتنزل: '+files[0].name); },true]);
   btns.push(['⬇️ نزّل ملف الإكسيل بالصور (Excel)',()=>{ saveFile(files[1]); toast('اتنزل: '+files[1].name); },true]);
   btns.push(['خلصت',null]);
-  ask('ابعت الجرد', `${S.items.length} صنف جاهزين. ابعت الملفين للمحاسب.`, btns);
-};
+  ask('ابعت الجرد', `${sess.items.length} صنف جاهزين. ابعت الملفين للمحاسب.`, btns);
+}
+$('exportBtn').onclick=()=>exportSession(S);
 window.addEventListener('beforeunload',save);
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 start();
