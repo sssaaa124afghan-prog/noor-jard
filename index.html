@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="جرد نور الخليج">
+<title>جرد نور الخليج</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-512.png"><link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#16202c;--ink2:#4c5867;--ink3:#7a8594;--line:#dfe4ea;--pri:#1d3a5f;--pri2:#e8eef6;--ok:#1f7a4d;--warn:#b25b00;--warnbg:#fff3e2;--bad:#b3261e;--r:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI","Noto Sans Arabic",Tahoma,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.en{direction:ltr;unicode-bidi:isolate;color:var(--ink3);font-size:.82em;font-weight:400}
+.hide{display:none!important}
+.screen{min-height:100dvh;padding:calc(14px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+header.top h1{font-size:22px;font-weight:700}
+.sub{color:var(--ink2);font-size:14px}
+.card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:0 1px 0 var(--line)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:14px;background:var(--pri);color:#fff;font-weight:700;font-size:17px;width:100%}
+.btn.line{background:var(--card);color:var(--pri);box-shadow:inset 0 0 0 1.5px var(--pri)}
+.btn.ghost{background:transparent;color:var(--ink2);min-height:44px;font-weight:500}
+.btn.danger{background:var(--card);color:var(--bad);box-shadow:inset 0 0 0 1.5px #e9c3c0}
+.btn:disabled{opacity:.4}
+.btn:focus-visible,input:focus-visible,.sug:focus-visible{outline:3px solid #7aa6d8;outline-offset:2px}
+label.f{display:block;font-weight:600;margin:18px 0 6px}
+input.in{width:100%;min-height:52px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:18px}
+input.in:focus{border-color:var(--pri)}
+/* lock */
+.lock{display:flex;flex-direction:column;justify-content:center;min-height:100dvh;padding:24px;max-width:460px;margin:0 auto}
+.lock h1{font-size:28px;margin-bottom:4px}
+.err{color:var(--bad);font-size:14px;margin-top:8px;min-height:20px}
+/* home */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 16px}
+.stat{background:var(--card);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-size:26px;line-height:1.2}
+.stat span{font-size:13px;color:var(--ink2)}
+.list{display:grid;gap:10px}
+.it{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;background:var(--card);border-radius:14px;padding:10px;text-align:start;width:100%}
+.it img,.it .noimg{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--pri2)}
+.it .nm{font-weight:600;line-height:1.4;font-size:15px}
+.it .cd{display:block;font-size:12.5px;color:var(--ink3);direction:ltr;text-align:right;overflow-wrap:anywhere}
+.it .q{font-weight:800;font-size:18px;text-align:center;white-space:nowrap}
+.it .q small{display:block;font-size:12px;font-weight:500;color:var(--ink2)}
+.flag{display:inline-block;font-size:11.5px;background:var(--warnbg);color:var(--warn);border-radius:6px;padding:0 6px;margin-top:2px}
+.empty{text-align:center;color:var(--ink2);padding:40px 10px}
+.bar{position:fixed;inset:auto 0 0 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:10px;max-width:620px;margin:0 auto}
+.bar .btn{flex:1}
+/* editor */
+.photo{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;width:100%;aspect-ratio:4/3;border-radius:var(--r);background:var(--pri2);color:var(--pri);font-weight:700;overflow:hidden;position:relative}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .re{position:absolute;bottom:10px;inset-inline-start:10px;background:rgba(0,0,0,.6);color:#fff;border-radius:10px;padding:6px 12px;font-size:14px}
+.sugs{display:grid;gap:6px;margin-top:8px}
+.sug{display:block;text-align:start;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+.sug b{display:block;font-weight:600;line-height:1.45}
+.sug span{font-size:12.5px;color:var(--ink3);direction:ltr;display:block;text-align:right}
+.sug.custom{border-style:dashed;color:var(--warn)}
+.chosen{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--pri2);border-radius:12px;padding:12px}
+.chosen b{display:block;line-height:1.45}
+.chosen .cd{font-size:13px;color:var(--ink2);direction:ltr;text-align:right}
+.chosen button{color:var(--pri);font-weight:700;white-space:nowrap}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{min-height:56px;border-radius:12px;background:#fff;border:1.5px solid var(--line);font-weight:700;line-height:1.2}
+.seg button[aria-pressed="true"]{background:var(--pri);color:#fff;border-color:var(--pri)}
+.seg button[aria-pressed="true"] .en{color:#d6e2f0}
+.qrow{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center}
+.qrow .x{font-size:22px;color:var(--ink3)}
+.qrow input{text-align:center;font-size:22px;font-weight:700}
+.qrow .add{min-height:52px;padding:0 16px;border-radius:12px;background:var(--ok);color:#fff;font-weight:800;font-size:22px}
+.hint{font-size:13px;color:var(--ink3);margin-top:6px}
+.lines{display:grid;gap:6px;margin-top:10px}
+.line{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:10px;padding:8px 12px;font-size:17px}
+.line .del{color:var(--bad);font-size:14px;font-weight:600;padding:6px}
+.total{margin-top:12px;background:var(--ink);color:#fff;border-radius:14px;padding:14px 16px;text-align:center}
+.total .calc{font-size:14px;opacity:.75;direction:ltr}
+.total b{display:block;font-size:34px;line-height:1.2}
+.merge{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px}
+dialog{border:0;border-radius:18px;padding:20px;max-width:420px;width:calc(100% - 32px);margin:auto}
+dialog::backdrop{background:rgba(10,20,30,.45)}
+dialog h2{font-size:19px;margin-bottom:8px}
+dialog p{color:var(--ink2);margin-bottom:14px}
+dialog .row{display:grid;gap:8px}
+.toast{position:fixed;inset:auto 16px calc(90px + env(safe-area-inset-bottom)) 16px;margin:auto;max-width:420px;background:var(--ink);color:#fff;border-radius:12px;padding:12px 16px;text-align:center;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
+.toast.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<section id="lock" class="lock hide">
+  <h1>جرد نور الخليج</h1>
+  <p class="sub">Noor Al Khaleej stock count</p>
+  <label class="f" for="who">اسمك <span class="en">Your name</span></label>
+  <input id="who" class="in" autocomplete="name" placeholder="مثال: محمد">
+  <label class="f">ملف المنتجات <span class="en">Products file (CSV)</span></label>
+  <button class="btn line" id="csvBtn">📄 اختار ملف المنتجات <span class="en">Choose CSV</span></button>
+  <p class="hint" id="catInfo">الملف اللي المحاسب بعتهولك على الواتساب <span class="en">The file the accountant sent you</span></p>
+  <p class="err" id="lockErr"></p>
+  <button class="btn" id="unlock" style="margin-top:8px">ابدأ <span class="en" style="color:#cfdcee">Start</span></button>
+</section>
+<input type="file" id="csvIn" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain" class="hide">
+
+<!-- HOME -->
+<section id="home" class="screen hide">
+  <header class="top">
+    <div><h1>الجرد</h1><p class="sub" id="who2"></p></div>
+    <button class="btn ghost" id="menu" style="width:auto" aria-label="خيارات">⋯</button>
+  </header>
+  <div class="stats">
+    <div class="stat"><b id="sItems">0</b><span>صنف اتعدّ <span class="en">items</span></span></div>
+    <div class="stat"><b id="sFlag">0</b><span>مش في القايمة <span class="en">not matched</span></span></div>
+  </div>
+  <div class="list" id="list"></div>
+  <div class="bar">
+    <button class="btn line" id="exportBtn">ابعت الملف <span class="en">Send</span></button>
+    <button class="btn" id="addBtn">+ صنف <span class="en" style="color:#cfdcee">Add</span></button>
+  </div>
+</section>
+
+<!-- EDITOR -->
+<section id="edit" class="screen hide">
+  <header class="top">
+    <h1 id="eTitle">صنف جديد</h1>
+    <button class="btn ghost" id="eCancel" style="width:auto">إلغاء <span class="en">Cancel</span></button>
+  </header>
+
+  <button class="photo" id="shot"><span style="font-size:34px">📷</span><span>صوّر الصنف <span class="en">Take photo</span></span></button>
+  <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
+
+  <label class="f" for="q">اسم الصنف <span class="en">Item name</span></label>
+  <div id="pickBox">
+    <input id="q" class="in" placeholder="اكتب جزء من الاسم أو الكود" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p class="hint">اختار الاسم من الاقتراحات، أو اكتب الكود <span class="en">Pick from the list</span></p>
+    <div class="sugs" id="sugs"></div>
+  </div>
+  <div id="chosenBox" class="hide"></div>
+  <div id="mergeNote" class="merge hide"></div>
+
+  <label class="f">الوحدة <span class="en">Unit</span></label>
+  <div class="seg" id="units">
+    <button data-u="pcs" aria-pressed="true">حبة<br><span class="en">Piece</span></button>
+    <button data-u="kg" aria-pressed="false">كيلو<br><span class="en">Kg</span></button>
+    <button data-u="g" aria-pressed="false">جرام<br><span class="en">Gram</span></button>
+  </div>
+
+  <label class="f">العدد <span class="en">Quantity</span></label>
+  <div class="qrow">
+    <input id="qa" class="in" inputmode="decimal" placeholder="العدد" aria-label="العدد أو عدد الكراتين">
+    <span class="x">×</span>
+    <input id="qb" class="in" inputmode="decimal" placeholder="في الكرتونة" aria-label="العدد في الكرتونة (اختياري)">
+    <button class="add" id="qAdd" aria-label="أضف">+</button>
+  </div>
+  <p class="hint">كراتين؟ اكتب عدد الكراتين × اللي في الكرتونة. فرط؟ اكتب العدد بس. <span class="en">Cartons × per carton, or just the number</span></p>
+  <div class="lines" id="lines"></div>
+  <div class="total"><div class="calc" id="calc">—</div><b id="tot">0</b><span id="totU">حبة</span></div>
+
+  <div class="bar">
+    <button class="btn" id="save" disabled>احفظ <span class="en" style="color:#cfdcee">Save</span></button>
+  </div>
+</section>
+
+<dialog id="dlg"><h2 id="dT"></h2><p id="dP"></p><div class="row" id="dB"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const UNIT = {pcs:['حبة','pcs'], kg:['كيلو','kg'], g:['جرام','g']};
+let CAT = [], IDX = [];
+let S = load();                          // {who, items:[{uid,pid,name,code,custom,unit,lines:[[a,b]],t}] , started}
+let E = null;                            // item being edited
+
+function load(){ try{ return JSON.parse(localStorage.getItem('jard_v1')) || {items:[]}; }catch(e){ return {items:[]}; } }
+function save(){ try{ localStorage.setItem('jard_v1', JSON.stringify(S)); }catch(e){ toast('المساحة مليانة! ابعت الملف'); } }
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),2200); }
+const fmt = n => (Math.round(n*1000)/1000).toLocaleString('en-US');
+const esc = t => String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function show(id){ ['lock','home','edit'].forEach(s=>$(s).classList.toggle('hide', s!==id)); window.scrollTo(0,0); }
+
+/* ── photos in IndexedDB ── */
+const DB = new Promise((ok,no)=>{ const r=indexedDB.open('jard',1); r.onupgradeneeded=()=>r.result.createObjectStore('img'); r.onsuccess=()=>ok(r.result); r.onerror=()=>no(r.error); });
+async function putImg(k,v){ const db=await DB; return new Promise(ok=>{ const tx=db.transaction('img','readwrite'); tx.objectStore('img').put(v,k); tx.oncomplete=ok; }); }
+async function getImg(k){ const db=await DB; return new Promise(ok=>{ const r=db.transaction('img').objectStore('img').get(k); r.onsuccess=()=>ok(r.result||null); r.onerror=()=>ok(null); }); }
+async function delImg(k){ const db=await DB; return new Promise(ok=>{ const tx=db.transaction('img','readwrite'); tx.objectStore('img').delete(k); tx.oncomplete=ok; }); }
+function shrink(file){ return new Promise(ok=>{ const img=new Image(); img.onload=()=>{ const m=900, s=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',.72)); URL.revokeObjectURL(img.src); }; img.onerror=()=>ok(null); img.src=URL.createObjectURL(file); }); }
+
+/* ── catalog: loaded from a CSV the accountant sends (Daftra products export or our own file) ── */
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');
+  const first=text.split(/\r?\n/,1)[0]; const cnt=c=>first.split(c).length;
+  const d=[',',';','\t'].sort((x,y)=>cnt(y)-cnt(x))[0];
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; } else cur+=c; }
+    else if(c==='"') q=true; else if(c===d){ row.push(cur); cur=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; }
+    else cur+=c; }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(v=>v.trim()!==''));
+}
+function catalogFromCSV(text){
+  const rows=parseCSV(text); if(rows.length<2) throw new Error('empty');
+  const H=rows[0].map(h=>norm(h));
+  const col=(...keys)=>H.findIndex(h=>keys.some(k=>h===k||h.includes(k)));
+  let iName=col('name','اسم المنتج','الاسم','اسم','item','product'), iCode=col('product code','كود المنتج','code','الكود','كود','sku'), iId=H.findIndex(h=>h==='id'||h==='رقم'||h==='المعرف'||h==='product id'||h==='product_id'), iUnit=col('unit','الوحده','وحده'), iDesc=col('description','الوصف','وصف'), iAct=col('deactivate','status','الحاله');
+  if(iCode===iName) iCode=-1;
+  if(iName<0) throw new Error('noname');
+  const out=[]; const seen=new Set();
+  for(const r of rows.slice(1)){
+    const name=(r[iName]||'').trim(); if(!name) continue;
+    if(iAct>=0 && /^(1|2|inactive|موقوف|غير نشط)$/i.test((r[iAct]||'').trim())) continue;
+    const code=iCode>=0?(r[iCode]||'').trim():'', id=iId>=0?(r[iId]||'').trim():'';
+    const key=id||code+'|'+name; if(seen.has(key)) continue; seen.add(key);
+    const u=iUnit>=0?norm(r[iUnit]):''; const w=/كيلو|كجم|جرام|جم|kg|gram|وزن|weight|^g$|^3$|^w$/.test(u);
+    let desc=iDesc>=0?(r[iDesc]||'').trim().replace(/\s+/g,' '):''; if(/[؀-ۿ]/.test(desc)) desc=''; 
+    out.push([id||key, name, code, w?'w':'p', desc.slice(0,70)]);
+  }
+  if(!out.length) throw new Error('none');
+  return out;
+}
+function loadCatFile(onDone){
+  const inp=$('csvIn'); inp.onchange=async()=>{ const f=inp.files[0]; inp.value=''; if(!f) return;
+    try{ const cat=catalogFromCSV(await f.text()); onDone(cat,f.name); }
+    catch(e){ toast(e.message==='noname'?'الملف مفيهوش عمود اسم المنتج':'الملف ده مش ملف منتجات'); } };
+  inp.click();
+}
+function setCat(cat,name){
+  CAT=cat; buildIndex();
+  try{ localStorage.setItem('jard_cat', JSON.stringify(CAT)); localStorage.setItem('jard_cat_info', JSON.stringify({name, n:CAT.length, at:new Date().toISOString()})); }catch(e){ toast('مساحة الموبايل مليانة'); }
+}
+const norm = t => String(t||'').toLowerCase()
+  .replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي')
+  .replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[()\[\]{}«»"'،,._\-\/]/g,' ').replace(/\s+/g,' ').trim();
+const tri = s => { const t=' '+s+' ', r=new Set(); for(let i=0;i<t.length-2;i++) r.add(t.slice(i,i+3)); return r; };
+function buildIndex(){ IDX = CAT.map(p=>{ const n=norm(p[1]+' '+p[2]+' '+p[4]); return {p, n, nn:norm(p[1]), tg:tri(n)}; }); }
+function search(q){
+  const nq=norm(q); if(nq.length<2) return [];
+  const toks=nq.split(' ').filter(Boolean);
+  let r=[];
+  for(const x of IDX){ if(toks.every(t=>x.n.includes(t))){ let sc=0; if(x.nn.startsWith(toks[0])) sc+=3; if(norm(x.p[2])===nq) sc+=10; sc-=x.nn.length/200; r.push([sc,x.p]); } }
+  if(r.length<3){ // typo-tolerant fallback: shared 3-letter pieces
+    const qg=tri(nq);
+    const fz=[]; for(const x of IDX){ let c=0; qg.forEach(g=>{ if(x.tg.has(g)) c++; }); const d=2*c/(qg.size+Math.min(x.tg.size,qg.size*3)); if(d>.28) fz.push([d,x.p]); }
+    fz.sort((a,b)=>b[0]-a[0]); const seen=new Set(r.map(a=>a[1][0])); fz.slice(0,8).forEach(a=>{ if(!seen.has(a[1][0])) r.push([-1+a[0],a[1]]); });
+  }
+  r.sort((a,b)=>b[0]-a[0]); return r.slice(0,8).map(a=>a[1]);
+}
+
+/* ── start ── */
+let pendingCat=null;
+function catInfoText(){ try{ const i=JSON.parse(localStorage.getItem('jard_cat_info')); return i?`${i.n.toLocaleString('en-US')} منتج · ${new Date(i.at).toLocaleDateString('en-GB')}`:''; }catch(e){ return ''; } }
+async function start(){
+  const cached = localStorage.getItem('jard_cat');
+  if(cached){ try{ CAT=JSON.parse(cached); buildIndex(); }catch(e){ CAT=[]; } }
+  if(CAT.length && S.who) return openHome();
+  $('who').value = S.who||''; if(CAT.length) $('catInfo').textContent='✓ '+catInfoText(); show('lock');
+}
+$('csvBtn').onclick=()=>loadCatFile((cat,name)=>{ pendingCat=[cat,name]; $('catInfo').textContent=`✓ ${name} · ${cat.length.toLocaleString('en-US')} منتج`; $('lockErr').textContent=''; });
+$('unlock').onclick = ()=>{
+  const who=$('who').value.trim();
+  if(!who){ $('lockErr').textContent='اكتب اسمك · Type your name'; return; }
+  if(pendingCat) setCat(...pendingCat);
+  if(!CAT.length){ $('lockErr').textContent='اختار ملف المنتجات الأول · Choose the products file'; return; }
+  S.who=who; if(!S.started) S.started=new Date().toISOString(); save(); openHome();
+};
+
+/* ── home ── */
+const total = it => it.lines.reduce((s,[a,b])=>s+a*(b||1),0);
+async function openHome(){
+  show('home');
+  $('who2').textContent = `${S.who} · ${new Date(S.started||Date.now()).toLocaleDateString('en-GB')} · ${CAT.length.toLocaleString('en-US')} منتج`;
+  $('sItems').textContent = S.items.length; $('sFlag').textContent = S.items.filter(i=>i.custom).length;
+  const L=$('list'); L.innerHTML='';
+  if(!S.items.length){ L.innerHTML='<p class="empty">لسه مفيش أصناف. دوس «+ صنف» وابدأ.<br><span class="en">No items yet. Tap Add.</span></p>'; return; }
+  for(const it of [...S.items].reverse()){
+    const b=document.createElement('button'); b.className='it';
+    b.innerHTML=`<span class="noimg"></span><span><span class="nm">${esc(it.name)}</span>${it.code?`<span class="cd">${esc(it.code)}</span>`:''}${it.custom?'<span class="flag">مش في القايمة</span>':''}</span><span class="q">${fmt(total(it))}<small>${UNIT[it.unit][0]}</small></span>`;
+    b.onclick=()=>openEdit(it.uid); L.appendChild(b);
+    getImg(it.uid).then(src=>{ if(src){ const im=new Image(); im.src=src; im.alt=''; b.firstChild.replaceWith(im); } });
+  }
+}
+$('addBtn').onclick=()=>openEdit(null);
+
+/* ── editor ── */
+function openEdit(uid){
+  const it = uid ? S.items.find(i=>i.uid===uid) : null;
+  E = it ? JSON.parse(JSON.stringify(it)) : {uid:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), pid:null, name:'', code:'', custom:false, unit:'pcs', lines:[], t:null, isNew:true};
+  E.photo=null; E.photoChanged=false;
+  $('eTitle').textContent = it ? 'تعديل صنف' : 'صنف جديد';
+  $('q').value=''; $('sugs').innerHTML=''; $('qa').value=''; $('qb').value=''; $('mergeNote').classList.add('hide');
+  setPhoto(null); if(it) getImg(it.uid).then(src=>{ if(src&&E&&E.uid===it.uid) setPhoto(src); });
+  renderChosen(); renderUnit(); renderLines(); show('edit');
+  if(!it) setTimeout(()=>$('shot').focus(),50);
+}
+function setPhoto(src){
+  const b=$('shot'); b.innerHTML = src ? `<img src="${src}" alt="صورة الصنف"><span class="re">صوّر تاني</span>` : '<span style="font-size:34px">📷</span><span>صوّر الصنف <span class="en">Take photo</span></span>';
+  if(E) E.photo=src;
+}
+$('shot').onclick=()=>$('cam').click();
+$('cam').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; const src=await shrink(f); if(src){ setPhoto(src); E.photoChanged=true; check(); setTimeout(()=>{ if(!E.name) $('q').focus(); },100); } };
+
+let st; $('q').oninput=()=>{ clearTimeout(st); st=setTimeout(renderSugs,120); };
+function renderSugs(){
+  const q=$('q').value, box=$('sugs'); box.innerHTML='';
+  if(norm(q).length<2) return;
+  const res=search(q);
+  for(const p of res){ const b=document.createElement('button'); b.className='sug'; b.innerHTML=`<b>${esc(p[1])}</b><span>${esc([p[2],p[4]].filter(Boolean).join(' · '))}</span>`; b.onclick=()=>choose(p); box.appendChild(b); }
+  const c=document.createElement('button'); c.className='sug custom'; c.innerHTML=`<b>مش لاقيه؟ احفظه باسم «${esc(q.trim())}»</b><span>Not in the list — save as typed</span>`; c.onclick=()=>chooseCustom(q.trim()); box.appendChild(c);
+}
+function choose(p){
+  const dup=S.items.find(i=>i.pid===p[0] && i.uid!==E.uid);
+  if(dup){ // same item counted before: continue on that record so quantities add up, never a second line
+    const keep=E.lines, ph=E.photo, chg=E.photoChanged;
+    E=JSON.parse(JSON.stringify(dup)); E.lines=E.lines.concat(keep); E.photo=ph; E.photoChanged=chg; E.mergedFrom=true;
+    if(!ph) getImg(dup.uid).then(src=>{ if(src) setPhoto(src); });
+    $('mergeNote').textContent='الصنف ده اتعدّ قبل كده — اللي هتضيفه هيتجمع على العدد القديم. Counted before: new lines add to it.';
+    $('mergeNote').classList.remove('hide');
+  } else { E.pid=p[0]; E.name=p[1]; E.code=p[2]; E.custom=false; E.unit = p[3]==='w' ? 'kg' : 'pcs'; }
+  $('eTitle').textContent = E.mergedFrom ? 'إضافة على صنف متعدّ' : $('eTitle').textContent;
+  renderChosen(); renderUnit(); renderLines(); setTimeout(()=>$('qa').focus(),50);
+}
+function chooseCustom(name){ if(!name) return; E.pid=null; E.name=name; E.code=''; E.custom=true; renderChosen(); setTimeout(()=>$('qa').focus(),50); }
+function renderChosen(){
+  const has=!!E.name; $('pickBox').classList.toggle('hide',has); $('chosenBox').classList.toggle('hide',!has);
+  if(has){ $('chosenBox').innerHTML=`<div class="chosen"><div><b>${esc(E.name)}</b>${E.code?`<span class="cd">${esc(E.code)}</span>`:''}${E.custom?'<span class="flag">مش في القايمة — المحاسب هيحدده</span>':''}</div><button id="chg">تغيير</button></div>`; $('chg').onclick=()=>{ if(E.mergedFrom){ toast('ده صنف متعدّ قبل كده'); return; } E.name=''; E.pid=null; E.code=''; E.custom=false; renderChosen(); $('q').focus(); renderSugs(); }; }
+  check();
+}
+function renderUnit(){ [...$('units').children].forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.u===E.unit)); b.onclick=()=>{ if(E.lines.length && b.dataset.u!==E.unit){ ask('تغيير الوحدة؟','العدد المسجل هيتحسب بالوحدة الجديدة.',[['غيّر',()=>{E.unit=b.dataset.u; renderUnit(); renderLines();}],['خليها',null]]); return; } E.unit=b.dataset.u; renderUnit(); renderLines(); }; }); }
+const num = v => { const n=parseFloat(String(v).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g,'.')); return isFinite(n)&&n>0 ? n : null; };
+$('qAdd').onclick=()=>{ const a=num($('qa').value), b=num($('qb').value);
+  if(a===null){ toast('اكتب العدد'); $('qa').focus(); return; }
+  if($('qb').value.trim() && b===null){ toast('العدد في الكرتونة غلط'); return; }
+  E.lines.push([a,b]); $('qa').value=''; $('qb').value=''; renderLines(); $('qa').focus(); };
+['qa','qb'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('qAdd').click(); } }));
+function renderLines(){
+  const L=$('lines'); L.innerHTML='';
+  E.lines.forEach(([a,b],i)=>{ const r=document.createElement('div'); r.className='line'; r.innerHTML=`<span dir="ltr">${b?`${fmt(a)} × ${fmt(b)} = <b>${fmt(a*b)}</b>`:`<b>${fmt(a)}</b>`}</span><button class="del">حذف</button>`; r.querySelector('.del').onclick=()=>{ E.lines.splice(i,1); renderLines(); }; L.appendChild(r); });
+  const t=total(E); $('tot').textContent=fmt(t); $('totU').textContent=`${UNIT[E.unit][0]} · ${UNIT[E.unit][1]}`;
+  $('calc').textContent = E.lines.length>1 ? E.lines.map(([a,b])=>b?`${fmt(a)}×${fmt(b)}`:fmt(a)).join(' + ')+' =' : (E.lines.length?'':'—');
+  check();
+}
+function check(){ $('save').disabled = !(E && E.name && E.lines.length && E.photo); }
+$('save').onclick=async()=>{
+  if(!E.photo){ toast('صوّر الصنف الأول'); return; }
+  if(E.photoChanged||E.isNew) await putImg(E.uid,E.photo);
+  const rec={uid:E.uid,pid:E.pid,name:E.name,code:E.code,custom:E.custom,unit:E.unit,lines:E.lines,t:new Date().toISOString()};
+  const k=S.items.findIndex(i=>i.uid===E.uid); if(k>=0) S.items[k]=rec; else S.items.push(rec);
+  save(); toast(`اتحفظ: ${fmt(total(rec))} ${UNIT[rec.unit][0]}`); E=null; openHome();
+};
+$('eCancel').onclick=()=>{ if(E && (E.lines.length||E.photoChanged) ){ ask('تسيب الصنف من غير حفظ؟','',[['سيبه',()=>{E=null;openHome();}],['كمّل',null]]); } else { E=null; openHome(); } };
+
+/* ── dialog ── */
+function ask(t,p,btns){ const d=$('dlg'); $('dT').textContent=t; $('dP').textContent=p; $('dP').classList.toggle('hide',!p); const B=$('dB'); B.innerHTML='';
+  btns.forEach(([l,fn,keep],i)=>{ const b=document.createElement('button'); b.className='btn'+(i? ' line':''); if(/احذف|ابدأ جرد جديد/.test(l)) b.className='btn danger'; b.textContent=l; b.onclick=()=>{ if(!keep) d.close(); fn&&fn(); if(keep) b.textContent='✓ '+l.replace(/^\S+\s/,''); }; B.appendChild(b); }); if(!d.open) d.showModal(); }
+$('menu').onclick=()=>ask('خيارات','',[
+  ['ابدأ جرد جديد',()=>ask('متأكد؟','هيتمسح الجرد ده من الموبايل. ابعت الملف الأول.',[['ابدأ جرد جديد',async()=>{ for(const i of S.items) await delImg(i.uid); S.items=[]; S.started=new Date().toISOString(); save(); openHome(); }],['رجوع',null]])],
+  ['تحديث ملف المنتجات',()=>loadCatFile((cat,name)=>{ setCat(cat,name); toast(`اتحدّث: ${cat.length.toLocaleString('en-US')} منتج`); })],
+  ['غيّر اسمي',()=>{ S.who=''; save(); $('who').value=''; $('catInfo').textContent='✓ '+catInfoText(); show('lock'); }],
+  ['رجوع',null]]);
+
+/* ── export: one HTML report with photos + one CSV ── */
+
+/* ── tiny XLSX writer (stored zip, no libraries): sheet with a photo in every row ── */
+const CRC=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(u){ let c=0xFFFFFFFF; for(let i=0;i<u.length;i++) c=CRC[(c^u[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zip(entries){ // [{name, data:Uint8Array}]
+  const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
+  const u16=v=>[v&255,(v>>>8)&255], u32=v=>[v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255];
+  for(const e of entries){ const nm=enc.encode(e.name), c=crc32(e.data), n=e.data.length;
+    const h=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(n),...u32(n),...u16(nm.length),...u16(0)]);
+    parts.push(h,nm,e.data);
+    cen.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(n),...u32(n),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);
+    off+=h.length+nm.length+n; }
+  const cs=cen.reduce((s,a)=>s+a.length,0);
+  return new Blob([...parts,...cen,new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(entries.length),...u16(entries.length),...u32(cs),...u32(off),0,0])]);
+}
+function thumb(src,m){ return new Promise(ok=>{ if(!src) return ok(null); const im=new Image(); im.onload=()=>{ const s=Math.min(1,m/Math.max(im.width,im.height)); const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height); const d=c.toDataURL('image/jpeg',.8); ok({b:Uint8Array.from(atob(d.split(',')[1]),x=>x.charCodeAt(0)), w:c.width, h:c.height}); }; im.onerror=()=>ok(null); im.src=src; }); }
+const xe=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+async function buildXlsx(rows){
+  const enc=new TextEncoder(), E=[], add=(n,t)=>E.push({name:n,data:typeof t==='string'?enc.encode(t):t});
+  const head=['#','الصورة','كود دفترة','اسم الصنف','الكمية','الوحدة','الكمية بالجرام','الحسبة','مش في القايمة','العدّاد','الوقت','product_id'];
+  const colW=[5,16,22,44,11,8,14,22,12,14,18,11];
+  const col=i=>String.fromCharCode(65+i);
+  const cs=(r,i,v,st)=>`<c r="${col(i)}${r}" t="inlineStr"${st?` s="${st}"`:''}><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
+  const cn=(r,i,v,st)=>v===''||v==null?'':`<c r="${col(i)}${r}"${st?` s="${st}"`:''}><v>${v}</v></c>`;
+  let sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${colW.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData><row r="1" ht="22" customHeight="1">${head.map((h,i)=>cs(1,i,h,1)).join('')}</row>`;
+  let draw='', drels='', ct='';
+  for(let k=0;k<rows.length;k++){ const r=rows[k], R=k+2;
+    const g = r.unit==='kg'? r.total*1000 : (r.unit==='g'? r.total : '');
+    sheet+=`<row r="${R}" ht="84" customHeight="1">${cn(R,0,k+1,2)}${cs(R,1,'',2)}${cs(R,2,r.code,2)}${cs(R,3,r.name,3)}${cn(R,4,r.total,4)}${cs(R,5,UNIT[r.unit][0],2)}${cn(R,6,g,4)}${cs(R,7,r.lines.map(([a,b])=>b?`${a}×${b}`:a).join(' + '),2)}${cs(R,8,r.custom?'نعم':'',2)}${cs(R,9,S.who,2)}${cs(R,10,new Date(r.t).toLocaleString('en-GB'),2)}${cn(R,11,/^\d+$/.test(String(r.pid??''))?r.pid:'',2)}</row>`;
+    const im=await thumb(r.img,320); if(!im) continue;
+    const n=k+1, H=104, W=Math.round(H*im.w/im.h), emu=v=>Math.round(v*9525);
+    add(`xl/media/image${n}.jpeg`, im.b);
+    drels+=`<Relationship Id="rId${n}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${n}.jpeg"/>`;
+    draw+=`<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>${emu(4)}</xdr:colOff><xdr:row>${R-1}</xdr:row><xdr:rowOff>${emu(4)}</xdr:rowOff></xdr:from><xdr:ext cx="${emu(Math.min(W,108))}" cy="${emu(Math.min(W,108)*im.h/im.w)}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${n+1}" name="صورة ${n}"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId${n}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`;
+  }
+  sheet+=`</sheetData><autoFilter ref="A1:L${rows.length+1}"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/><drawing r:id="rId1"/></worksheet>`;
+  add('[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>`);
+  add('_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  add('xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="الجرد" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'الجرد'!$A$1:$L$${rows.length+1}</definedName></definedNames></workbook>`);
+  add('xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  add('xl/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.###"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="13"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D3A5F"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FFDFE4EA"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf><xf numFmtId="164" fontId="2" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+  add('xl/worksheets/_rels/sheet1.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`);
+  add('xl/worksheets/sheet1.xml',sheet);
+  add('xl/drawings/drawing1.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${draw}</xdr:wsDr>`);
+  add('xl/drawings/_rels/drawing1.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${drels}</Relationships>`);
+  return zip(E);
+}
+async function buildFiles(){
+  const day=new Date(S.started||Date.now()).toISOString().slice(0,10), who=S.who.replace(/[\\/:*?"<>|]/g,'');
+  const rows=[]; for(const it of S.items){ rows.push({...it, total:total(it), img:await getImg(it.uid)}); }
+  const unitAr=u=>UNIT[u][0];
+  const data=rows.map(r=>({pid:r.pid,code:r.code,name:r.name,custom:r.custom,unit:r.unit,qty:r.total,lines:r.lines,t:r.t}));
+  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>جرد ${esc(who)} ${day}</title><style>body{font:14px/1.5 system-ui,Tahoma,sans-serif;margin:24px;color:#16202c}h1{font-size:20px;margin:0}p{color:#4c5867;margin:4px 0 16px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dfe4ea;padding:8px;text-align:right;vertical-align:middle}th{background:#e8eef6;font-size:13px}img{width:110px;height:110px;object-fit:cover;border-radius:8px}td.q{font-weight:800;font-size:18px;white-space:nowrap}.c{direction:ltr;color:#7a8594;font-size:12px}.f{color:#b25b00;font-size:12px}.l{direction:ltr;color:#7a8594;font-size:12px}tr{page-break-inside:avoid}</style></head><body><h1>جرد نور الخليج</h1><p>العدّاد: ${esc(S.who)} · بدأ: ${new Date(S.started).toLocaleString('en-GB')} · ${rows.length} صنف</p><table><thead><tr><th>#</th><th>الصورة</th><th>الصنف</th><th>العدد</th><th>التفاصيل</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.img?`<img src="${r.img}">`:''}</td><td>${esc(r.name)}${r.code?`<div class="c">${esc(r.code)}</div>`:''}${r.custom?'<div class="f">مش في القايمة</div>':''}</td><td class="q">${fmt(r.total)} ${unitAr(r.unit)}</td><td class="l">${r.lines.map(([a,b])=>b?`${fmt(a)}×${fmt(b)}`:fmt(a)).join(' + ')}</td></tr>`).join('')}</tbody></table><script type="application/json" id="jard-data">${JSON.stringify({app:'jard',v:1,who:S.who,started:S.started,exported:new Date().toISOString(),items:data}).replace(/</g,'\\u003c')}<\/script></body></html>`;
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv='\ufeff'+['product_id,code,name,not_in_list,unit,qty,qty_grams,lines,counter,time'].concat(rows.map(r=>[r.pid??'',q(r.code),q(r.name),r.custom?1:0,r.unit,r.total,r.unit==='kg'?r.total*1000:(r.unit==='g'?r.total:''),q(r.lines.map(([a,b])=>b?`${a}x${b}`:a).join(' + ')),q(S.who),r.t].join(','))).join('\r\n');
+  const tag=(who.replace(/[^A-Za-z0-9]/g,'')||'u'+Math.abs([...who].reduce((h,c)=>h*31+c.charCodeAt(0)|0,7))%10000)+'_'+new Date().toTimeString().slice(0,5).replace(':','');
+  const xl=await buildXlsx(rows);
+  return [new File([html],`noor-stock_${day}_${tag}.html`,{type:'text/html'}), new File([xl],`noor-stock_${day}_${tag}.xlsx`,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})];
+}
+// Files are prepared first; each button then acts inside its own tap (phones and browsers block share/download after a delay)
+// file:// pages give blob: links a 'null' origin and the browser then drops the file name, so we use data: links there
+const DATAURL={};
+async function prepData(files){ if(location.protocol!=='file:') return; for(const f of files){ DATAURL[f.name]=await new Promise(ok=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.readAsDataURL(f); }); } }
+function saveFile(f){ const a=document.createElement('a'); const u=DATAURL[f.name]||URL.createObjectURL(f); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ if(u.startsWith('blob:')) URL.revokeObjectURL(u); a.remove(); },4000); }
+$('exportBtn').onclick=async()=>{
+  if(!S.items.length){ toast('مفيش أصناف لسه · No items yet'); return; }
+  toast('بنجهّز الملف…');
+  let files; try{ files=await buildFiles(); await prepData(files); }catch(e){ ask('حصلت مشكلة','ماقدرناش نجهّز الملف: '+(e&&e.message||e),[['تمام',null]]); return; }
+  const canShare = !!(navigator.canShare && navigator.canShare({files}));
+  const btns=[];
+  if(canShare) btns.push(['📤 ابعت للمحاسب (واتساب…)',async()=>{ try{ await navigator.share({files, title:'جرد نور الخليج'}); }catch(e){ if(e.name!=='AbortError'){ toast('المشاركة مش شغالة هنا، نزّل الملف'); } } }]);
+  btns.push(['⬇️ نزّل التقرير بالصور (HTML)',()=>{ saveFile(files[0]); toast('اتنزل: '+files[0].name); },true]);
+  btns.push(['⬇️ نزّل ملف الإكسيل بالصور (Excel)',()=>{ saveFile(files[1]); toast('اتنزل: '+files[1].name); },true]);
+  btns.push(['خلصت',null]);
+  ask('ابعت الجرد', `${S.items.length} صنف جاهزين. ابعت الملفين للمحاسب.`, btns);
+};
+window.addEventListener('beforeunload',save);
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+start();
+</script>
+</body>
+</html>
